@@ -1,8 +1,8 @@
 import nltk
 from nltk.tokenize import word_tokenize
 import sys
-#import re
-#import math
+import re
+import math
 
 
 # Initializing n-gram dictionaries upto n=4.
@@ -11,10 +11,63 @@ bigram = {}
 trigram = {}
 fourgram = {}
 
+
+def preprocess(text):
+    # the function prpocess a single line
+    # it takes the single line and returns a list of tokens for that particular line
+    # make text lower
+    cleaned_text = text.lower()    
+    # remove non-ASCII characters
+    #cleaned_text = re.sub(r'[^\x00-\x7F]+',' ', cleaned_text)
+    # remove URLS
+    cleaned_text = re.sub(r"http\S+", "<URL>", cleaned_text)
+    # remove HTs
+    cleaned_text = re.sub(r"#[A-Za-z0-9_]+", "<HASHTAG>", cleaned_text)
+    # remove Mentions
+    cleaned_text = re.sub(r"@[A-Za-z0-9_]+", "<MENTION>", cleaned_text)
+    # replace percentage quantities with tags
+    cleaned_text = re.sub(r'(\d+(\.\d+)?%)', "<PERCENT>", cleaned_text)
+    # replace numbers with tags
+    cleaned_text = re.sub("^\d+\s|\s\d+\s|\s\d+$", " <NUM> ", cleaned_text)
+    # cleaned_text = re.sub(r'[0-9]', " <NUM> ", cleaned_text)
+    # hypenated words are accounted for by joining them/merging them together
+    cleaned_text = re.sub(r'\w+(?:-\w+)+', '', cleaned_text)
+    # Substitue for punctuations
+    cleaned_text = re.sub(r"(\'t)", " not", cleaned_text)
+    cleaned_text = re.sub(r'(i\'m)', "i am", cleaned_text)
+    cleaned_text = re.sub(r'(ain\'t)', "am not", cleaned_text)
+    cleaned_text = re.sub(r'(\'ll)', " will", cleaned_text)
+    cleaned_text = re.sub(r'(\'ve)', " have", cleaned_text)
+    cleaned_text = re.sub(r'(\'re)', " are", cleaned_text)
+    cleaned_text = re.sub(r'(\'s)', " is", cleaned_text)
+    cleaned_text = re.sub(r'(\'re)', " are", cleaned_text)
+    # removing repetetive spam
+    cleaned_text = re.sub('\!\!+', '!', cleaned_text)
+    cleaned_text = re.sub('\*\*+', '*', cleaned_text)
+    cleaned_text = re.sub('\>\>+', '>', cleaned_text)
+    cleaned_text = re.sub('\<\<+', '<', cleaned_text)
+    cleaned_text = re.sub('\?\?+', '?', cleaned_text)
+    cleaned_text = re.sub('\!\!+', '!', cleaned_text)
+    cleaned_text = re.sub('\.\.+', '.', cleaned_text)
+    cleaned_text = re.sub('\,\,+', ',', cleaned_text)
+    cleaned_text = re.sub('\:\:+', ':', cleaned_text)
+    cleaned_text = re.sub('\;\;+', ';', cleaned_text)
+    # matching punctuation characters at end of sentences and padding them
+    cleaned_text = re.sub('([;:.,!?()])', r' \1 ', cleaned_text)
+    # removing multiple spaces finally
+    cleaned_text = re.sub('\s{2,}', ' ', cleaned_text)
+    # remove trailing white spaces
+    # important to get rid of empty tokens at the end of list
+    cleaned_text = re.sub(r'\s+$', '', cleaned_text)
+    # tokenization based on spaces for each line
+    spaces = r"\s+"
+    tokenized_sent = re.split(spaces, cleaned_text)
+    return tokenized_sent
+
 def ngram_dict(data):
     token_sent = []
     for sent in data:
-        token_sent.append(nltk.word_tokenize(sent))
+        token_sent.append(preprocess(sent))
 
     for sent in token_sent:
         for token in sent:
@@ -85,14 +138,12 @@ def kneyser_ney(n, n_gram, high_ord=True):
             # now we include pcont, so here:
             # num = different string types before the final word
             # denom = the number of different possible n-gram types
-            p_cont = len(
-                set([item[0] for item in bigram.items() if n_gram[0] in item[1].keys()]))
+            p_cont = len(set([item[0] for item in bigram.items() if n_gram[0] in item[1].keys()]))
             denom_cont = len(bigram.keys())
             return p_cont/denom_cont
     if n == 2:
         d_2 = 0.75
-        lambda_2 = (d_2 * len(bigram[n_gram[0]]))/(sum([item[1]
-                                                        for item in bigram[n_gram[0]].items()]))
+        lambda_2 = (d_2 * len(bigram[n_gram[0]]))/(sum([item[1] for item in bigram[n_gram[0]].items()]))
         if high_ord:
             if n_gram[1] in bigram[n_gram[0]].keys():
                 num_2 = bigram[n_gram[0]][n_gram[1]]
@@ -107,6 +158,53 @@ def kneyser_ney(n, n_gram, high_ord=True):
                     if n_gram[1] in trigram[first][n_gram[0]].keys():
                         num_2 += 1
             return (max(num_2-d_2, 0)/len(trigram.keys()))+(lambda_2*kneyser_ney(1, n_gram[1:], False))
+    if n == 3:
+        d_3 = 0.75
+        lambda_3 = (d_3 * len(trigram[n_gram[0]][n_gram[1]]))/(sum([item[1] for item in trigram[n_gram[0]][n_gram[1]].items()]))
+        if high_ord:
+            if n_gram[1] in trigram[n_gram[0]].keys():
+                if n_gram[2] in trigram[n_gram[0]][n_gram[1]].keys():
+                    num_3 = trigram[n_gram[0]][n_gram[1]][n_gram[2]]
+                else:
+                    num_3 = 0
+            else:
+                num_3 = 0
+            # total frequency count
+            return ((max(num_3-d_3, 0))/sum([item[1] for item in trigram[n_gram[0]][n_gram[1]].items()])) + (lambda_3*kneyser_ney(2, n_gram[1:], False))
+        else:
+            num_3 = 0
+            for first in fourgram.keys():
+                if n_gram[0] in fourgram[first].keys():
+                    if n_gram[1] in fourgram[first][n_gram[0]].keys():
+                        if n_gram[2] in fourgram[first][n_gram[0]][n_gram[1]].keys():
+                            num_3 += 1
+            return (max(num_3-d_3, 0)/len(fourgram.keys()))+(lambda_3*kneyser_ney(2, n_gram[1:], False))
+    if n == 4:
+        d_4 = 0.75
+        lambda_4 = (d_4 * len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]]))/(sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()]))
+        if high_ord:
+            if n_gram[1] in fourgram[n_gram[0]].keys():
+                if n_gram[2] in fourgram[n_gram[0]][n_gram[1]].keys():
+                    if n_gram[3] in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].keys():
+                        num_4 = fourgram[n_gram[0]][n_gram[1]][n_gram[2]][n_gram[3]]
+                    else:
+                        num_4 = 0
+                else:
+                    num_4 = 0
+            else:
+                num_4 = 0
+            # total frequency count
+            return ((max(num_4-d_4, 0))/sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])) + (lambda_4*kneyser_ney(3, n_gram[1:], False))
+        else:
+            num_4 = 0
+            for first in fourgram.keys():
+                if n_gram[0] in fourgram[first].keys():
+                    if n_gram[1] in fourgram[first][n_gram[0]].keys():
+                        if n_gram[2] in fourgram[first][n_gram[0]][n_gram[1]].keys():
+                            if n_gram[3] in fourgram[first][n_gram[0]][n_gram[1]][n_gram[2]].keys():
+                                num_4 += 1
+            return (max(num_4-d_4, 0)/len(fourgram.keys()))+(lambda_4*kneyser_ney(3, n_gram[1:], False))
+
     # if n == 3:
     #     d_3 = 0.75
     #     lambda_3 = (d_3 * len(trigram[n_gram[0]][n_gram[1]]))/(sum([item[1] for item in trigram[n_gram[0]][n_gram[1]].items()]))
@@ -117,44 +215,54 @@ def kneyser_ney(n, n_gram, high_ord=True):
     #     lambda_4 = (d_4 * len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]]))/(sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()]))
 
 
-    #check if all arguments are given
+#calculating perplexity using an array of probabilities
+def perplexity(prob_array):
+    log_prob = 0
+    for i in range(len(prob_array)):
+        log_prob += math.log(prob_array[i])
+    return math.exp(-log_prob/len(prob_array))
+
+
+# check if all arguments are given
 if len(sys.argv) != 4:
     print("please provide all the arguments")
     exit()
-#obtain n, model type and path from the first argument
-n = int(sys.argv[1])
+# obtain n, model type and path from the first argument
+num = int(sys.argv[1])
 model = sys.argv[2]
 path = sys.argv[3]
 
-#reading file and storing the data
+if num > 4:
+    n = 4
+else:
+    n = num
+
+if model == "k":
+    smooth_model = kneyser_ney
+elif model == "w":
+    smooth_model = witten_bell
+else:
+    print("Please provide a valid model type")
+    exit()
+
+# reading file and storing the data
 with open(path) as file:
     fdata = file.readlines()
-print(fdata)
-#generating the uni,bi,tri,four gram dictionaries
-#ngram_dict(fdata)
+
+# generating the uni,bi,tri,four gram dictionaries
+ngram_dict(fdata)
 print("Trained")
+sentence = input("input sentence: ")
+sentence = preprocess(sentence)
 
-#check for w and k from the second argument
-# if sys.argv[2] == 'w':
-#     sm_model = kneyser_ney
-# elif sys.argv[2] == 'k':
-#     smoothing = kneyser_ney
-# else:
-#     print("Incorrect Model Option, Model NOT defined")
+perplex = []
+for i in range(len(sentence)-n):
+    ans = 1
+    prob = kneyser_ney(n,sentence[i:i+n])
+    print("for",sentence[i:i+n],':',prob)
+    ans = ans * prob
+    perplex.append(ans)
+print("Final perplexity:", perplexity(perplex))
 
-# print("Training on corpus")
-# ngram_dict(sys.argv[3])
-# print("Training complete")
-# sentence = input("Input sentence: ")
-# sentence = [str(tokens).lower() for tokens in tokenizer(sentence)]
-# for i, token in enumerate(sentence):
-#     sentence[i] = token if token in unigram.keys() else "<unk>"
-# length = len(sentence)
-# for i in range(n-1):
-#     sentence.insert(0, '<start>')
-# ans = 1
-# for i in range(length):
-#     prob = smoothing(n, sentence[i:i+n])
-#     print("for", sentence[i:i+n], ':', prob)
-#     ans = ans * prob
-# print("Final output:", ans)
+
+

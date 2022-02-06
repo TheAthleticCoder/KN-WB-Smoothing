@@ -72,7 +72,43 @@ ngram_dict(fdata)
 #     print(item[0])
 
 # Items is everything, items[1] is the first nested dictionary and u can print their keys and values
-
+def kneser_ney(n,n_gram,high_order=True):
+    d=0.75
+    if n==1:
+        if high_order:
+            return max((unigram[n_gram[0]]-d),0)/sum([item[1] for item in unigram.items()])
+        else:
+            continuation_count = len(set([item[0] for item in bigram.items() if n_gram[0] in item[1].keys()]))
+            return continuation_count/len(bigram.keys())
+    if n==2:
+        lambd = (d * len(bigram[n_gram[0]]))/(sum([item[1] for item in bigram[n_gram[0]].items()])) 
+        if high_order:
+            count = bigram[n_gram[0]][n_gram[1]] if n_gram[1] in bigram[n_gram[0]].keys() else 0
+            among = sum([item[1] for item in bigram[n_gram[0]].items()])
+        else:
+            count = 0
+            for first in trigram.keys():
+                if n_gram[0] in trigram[first].keys():
+                    if n_gram[1] in trigram[first][n_gram[0]].keys():
+                        count += 1
+            among = len(trigram.keys())
+        return (max(0,count-d)/among)+(lambd*kneser_ney(1,n_gram[1:],False))
+    
+# Implement Kneyser-Ney for n=4
+def kneser_ney_4(n_gram):
+    d=0.75
+    if n_gram[0] not in fourgram.keys():
+        return 0
+    if n_gram[1] not in fourgram[n_gram[0]].keys():
+        return 0
+    if n_gram[2] not in fourgram[n_gram[0]][n_gram[1]].keys():
+        return 0
+    if n_gram[3] not in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].keys():
+        return 0
+    lambd = (d * len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]][n_gram[3]]))/(sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])) 
+    count = fourgram[n_gram[0]][n_gram[1]][n_gram[2]][n_gram[3]] if n_gram[3] in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].keys() else 0
+    among = sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])
+    return (max(0,count-d)/among)+(lambd*kneser_ney_4(n_gram[1:]))
 
 def kneyser_ney(n, n_gram, high_ord=True):
     if n == 1:
