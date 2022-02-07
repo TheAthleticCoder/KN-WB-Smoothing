@@ -66,11 +66,39 @@ def preprocess(text):
     tokenized_sent = re.split(spaces, cleaned_text)
     return tokenized_sent
 
+#how to randomly choose from a list
+def random_choice(list):
+    return random.choice(list)
+
+def convert_some_to_unk(tokenized_sentences):
+    #ratio = 0.005
+    vocab = {}
+    for sent in tokenized_sentences:
+        for token in sent:
+            if token in vocab.keys():
+                vocab[token] += 1
+            else:
+                vocab[token] = 1
+    #to_be_changed = int(ratio * len(vocab))
+    vocab = {k: v for k, v in sorted(vocab.items(), key=lambda item: item[1])}
+    to_be_changed = 0
+    for key in vocab.keys():
+        if vocab[key] == 1:
+            to_be_changed += 1
+    words_to_be_changed = list(vocab.keys())[0:to_be_changed]
+    for i,sent in enumerate(tokenized_sentences):
+        for j,token in enumerate(sent):
+            if token in words_to_be_changed:
+                tokenized_sentences[i][j] = '<UNK>'
+    return tokenized_sentences
+
+
 #Creating n-gram dictionaries for each n
 def ngram_dict(data):
     token_sent = []
     for sent in data:
         token_sent.append(preprocess(sent))
+    token_sent = convert_some_to_unk(token_sent)
 
     for sent in token_sent:
         for token in sent:
@@ -222,8 +250,8 @@ def witten_bell(n, n_gram, high_ord= True):
     if n == 2:
         no_tokens = len(bigram[n_gram[0]])
         types = sum([item[1] for item in bigram[n_gram[0]].items()])
-        plus_lambda = (types/no_tokens+types)
-        minus_lambda = (no_tokens/no_tokens+types)
+        plus_lambda = (types/(no_tokens+types))
+        minus_lambda = (no_tokens/(no_tokens+types))
         if n_gram[1] in bigram[n_gram[0]].keys(): #if seen in higher order model, we can use it
             return (plus_lambda)*(bigram[n_gram[0]][n_gram[1]]/types) + (minus_lambda)*(witten_bell(1, n_gram[1:]))
         else:
@@ -232,8 +260,8 @@ def witten_bell(n, n_gram, high_ord= True):
         if n_gram[1] in trigram[n_gram[0]].keys():
             no_tokens = len(trigram[n_gram[0]][n_gram[1]])
             types = sum([item[1] for item in trigram[n_gram[0]][n_gram[1]].items()])
-            plus_lambda = (types/no_tokens+types)
-            minus_lambda = (no_tokens/no_tokens+types)
+            plus_lambda = (types/(no_tokens+types))
+            minus_lambda = (no_tokens/(no_tokens+types))
             if n_gram[2] in trigram[n_gram[0]][n_gram[1]].keys():
                 return (plus_lambda)*(trigram[n_gram[0]][n_gram[1]][n_gram[2]]/types) + (minus_lambda)*(witten_bell(2, n_gram[1:]))
             else:
@@ -241,20 +269,35 @@ def witten_bell(n, n_gram, high_ord= True):
         else:
             return 0.5*witten_bell(2, n_gram[1:])
     if n == 4:
-        no_tokens = len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]])
-        types = sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])
-        plus_lambda = (types/no_tokens+types)
-        minus_lambda = (no_tokens/no_tokens+types)
         if n_gram[1] in fourgram[n_gram[0]].keys():
             if n_gram[2] in fourgram[n_gram[0]][n_gram[1]].keys():
+                no_tokens = len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]])
+                types = sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])
+                plus_lambda = (types/(no_tokens+types))
+                minus_lambda = (no_tokens/(no_tokens+types))
                 if n_gram[3] in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].keys():
                     return (plus_lambda)*(fourgram[n_gram[0]][n_gram[1]][n_gram[2]][n_gram[3]]/types) + (minus_lambda)*(witten_bell(3, n_gram[1:]))
                 else:
                     return minus_lambda*witten_bell(3, n_gram[1:])
             else:
-                return minus_lambda*witten_bell(3, n_gram[1:])
+                return 0.5*witten_bell(3, n_gram[1:])
         else:
-            return minus_lambda*witten_bell(3, n_gram[1:])
+            return 0.5*witten_bell(3, n_gram[1:])
+    # if n == 4:
+    #     no_tokens = len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]])
+    #     types = sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])
+    #     plus_lambda = (types/(no_tokens+types))
+    #     minus_lambda = (no_tokens/(no_tokens+types))
+    #     if n_gram[1] in fourgram[n_gram[0]].keys():
+    #         if n_gram[2] in fourgram[n_gram[0]][n_gram[1]].keys():
+    #             if n_gram[3] in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].keys():
+    #                 return (plus_lambda)*(fourgram[n_gram[0]][n_gram[1]][n_gram[2]][n_gram[3]]/types) + (minus_lambda)*(witten_bell(3, n_gram[1:]))
+    #             else:
+    #                 return minus_lambda*witten_bell(3, n_gram[1:])
+    #         else:
+    #             return minus_lambda*witten_bell(3, n_gram[1:])
+    #     else:
+    #         return minus_lambda*witten_bell(3, n_gram[1:])
 
 
 
@@ -309,8 +352,16 @@ with open(path) as file:
 # generating the uni,bi,tri,four gram dictionaries
 ngram_dict(fdata)
 print("Trained")
+
 sentence = input("input sentence: ")
 sentence = preprocess(sentence)
+sen_temp = []
+for i in sentence:
+    if i in unigram.keys():
+        sen_temp.append(i)
+    else:
+        sen_temp.append("<UNK>")
+sentence = sen_temp
 
 #Calculating perplexity of the Input sentence.
 perplex = []
@@ -319,6 +370,3 @@ for i in range(len(sentence)-n+1):
     print("for",sentence[i:i+n],':',prob)
     perplex.append(prob)
 print("Final perplexity:", perplexity(perplex))
-
-
-
