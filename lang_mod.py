@@ -1,4 +1,6 @@
+#Importing the required libraries
 import nltk
+import random
 from nltk.tokenize import word_tokenize
 import sys
 import re
@@ -11,7 +13,7 @@ bigram = {}
 trigram = {}
 fourgram = {}
 
-
+# Cleaning up text suitably and tokenizing it
 def preprocess(text):
     # the function prpocess a single line
     # it takes the single line and returns a list of tokens for that particular line
@@ -64,6 +66,7 @@ def preprocess(text):
     tokenized_sent = re.split(spaces, cleaned_text)
     return tokenized_sent
 
+#Creating n-gram dictionaries for each n
 def ngram_dict(data):
     token_sent = []
     for sent in data:
@@ -115,13 +118,8 @@ def ngram_dict(data):
             else:
                 fourgram[sent[i]][sent[i+1]][sent[i+2]][sent[i+3]] += 1
 
-
-# for item in bigram.items():
-#     print(item[0])
-
-# Items is everything, items[1] is the first nested dictionary and u can print their keys and values
-
-
+#Implementing Kneyser-Ney for n-grams
+## Implementing for different discount values and accounting for high order as well
 def kneyser_ney(n, n_gram, high_ord=True):
     if n == 1:
         d_1 = 0.5
@@ -214,6 +212,51 @@ def kneyser_ney(n, n_gram, high_ord=True):
     #     d_4 = 0.75
     #     lambda_4 = (d_4 * len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]]))/(sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()]))
 
+#Implementing Witten Bell algorithm
+def witten_bell(n, n_gram, high_ord= True):
+    if n == 1:
+        #We calculate the standard probility of the n_gram, called "original prob"
+        num = unigram[n_gram[0]]
+        denom = sum([item[1] for item in unigram.items()])
+        return (num/denom)
+    if n == 2:
+        no_tokens = len(bigram[n_gram[0]])
+        types = sum([item[1] for item in bigram[n_gram[0]].items()])
+        plus_lambda = (types/no_tokens+types)
+        minus_lambda = (no_tokens/no_tokens+types)
+        if n_gram[1] in bigram[n_gram[0]].keys(): #if seen in higher order model, we can use it
+            return (plus_lambda)*(bigram[n_gram[0]][n_gram[1]]/types) + (minus_lambda)*(witten_bell(1, n_gram[1:]))
+        else:
+            return minus_lambda*witten_bell(1, n_gram[1:])
+    if n == 3:
+        if n_gram[1] in trigram[n_gram[0]].keys():
+            no_tokens = len(trigram[n_gram[0]][n_gram[1]])
+            types = sum([item[1] for item in trigram[n_gram[0]][n_gram[1]].items()])
+            plus_lambda = (types/no_tokens+types)
+            minus_lambda = (no_tokens/no_tokens+types)
+            if n_gram[2] in trigram[n_gram[0]][n_gram[1]].keys():
+                return (plus_lambda)*(trigram[n_gram[0]][n_gram[1]][n_gram[2]]/types) + (minus_lambda)*(witten_bell(2, n_gram[1:]))
+            else:
+                return minus_lambda*witten_bell(2, n_gram[1:])
+        else:
+            return 0.5*witten_bell(2, n_gram[1:])
+    if n == 4:
+        no_tokens = len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]])
+        types = sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])
+        plus_lambda = (types/no_tokens+types)
+        minus_lambda = (no_tokens/no_tokens+types)
+        if n_gram[1] in fourgram[n_gram[0]].keys():
+            if n_gram[2] in fourgram[n_gram[0]][n_gram[1]].keys():
+                if n_gram[3] in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].keys():
+                    return (plus_lambda)*(fourgram[n_gram[0]][n_gram[1]][n_gram[2]][n_gram[3]]/types) + (minus_lambda)*(witten_bell(3, n_gram[1:]))
+                else:
+                    return minus_lambda*witten_bell(3, n_gram[1:])
+            else:
+                return minus_lambda*witten_bell(3, n_gram[1:])
+        else:
+            return minus_lambda*witten_bell(3, n_gram[1:])
+
+
 
 #calculating perplexity using an array of probabilities
 def perplexity(prob_array):
@@ -223,20 +266,24 @@ def perplexity(prob_array):
     return math.exp(-log_prob/len(prob_array))
 
 
+### INTERACTIVE PART OF CODE ###
 # check if all arguments are given
 if len(sys.argv) != 4:
     print("please provide all the arguments")
     exit()
+
 # obtain n, model type and path from the first argument
 num = int(sys.argv[1])
 model = sys.argv[2]
 path = sys.argv[3]
 
+# Making sure that n is valid else we set it to 4(default)
 if num > 4:
     n = 4
 else:
     n = num
 
+# Choosing the model type based on the input
 if model == "k":
     smooth_model = kneyser_ney
 elif model == "w":
@@ -249,19 +296,28 @@ else:
 with open(path) as file:
     fdata = file.readlines()
 
+# #shuffling data in a list
+# with open(path) as file:
+#     fdata = file.readlines()
+# random.shuffle(fdata)
+# # Choosing training and testing data accordingly
+# training_data = fdata[:len(fdata)-1000+1]
+# testing_data = fdata[len(fdata)-1000+1:]
+# ngram_dict(training_data)
+
+
 # generating the uni,bi,tri,four gram dictionaries
 ngram_dict(fdata)
 print("Trained")
 sentence = input("input sentence: ")
 sentence = preprocess(sentence)
 
+#Calculating perplexity of the Input sentence.
 perplex = []
-for i in range(len(sentence)-n):
-    ans = 1
-    prob = kneyser_ney(n,sentence[i:i+n])
+for i in range(len(sentence)-n+1):
+    prob = smooth_model(n,sentence[i:i+n])
     print("for",sentence[i:i+n],':',prob)
-    ans = ans * prob
-    perplex.append(ans)
+    perplex.append(prob)
 print("Final perplexity:", perplexity(perplex))
 
 
