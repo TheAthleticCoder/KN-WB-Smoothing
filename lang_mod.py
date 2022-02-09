@@ -86,6 +86,17 @@ def convert_some_to_unk(tokenized_sentences):
         if vocab[key] == 1:
             to_be_changed += 1
     words_to_be_changed = list(vocab.keys())[0:to_be_changed]
+    # temp_sent = []
+    # temp_tokenized_sents = []
+    # for sent in tokenized_sentences:
+    #     for word in sent:
+    #         if word in words_to_be_changed:
+    #             temp_sent.append("<UNK>")
+    #         else:
+    #             temp_sent.append(word)
+    #     temp_tokenized_sents.append(temp_sent)
+    # tokenized_sentences = temp_tokenized_sents
+    # return tokenized_sentences
     for i,sent in enumerate(tokenized_sentences):
         for j,token in enumerate(sent):
             if token in words_to_be_changed:
@@ -257,7 +268,8 @@ def witten_bell(n, n_gram, high_ord= True):
         else:
             return minus_lambda*witten_bell(1, n_gram[1:])
     if n == 3:
-        if n_gram[1] in trigram[n_gram[0]].keys():
+        # if n_gram[1] in trigram[n_gram[0]].keys():
+        try:
             no_tokens = len(trigram[n_gram[0]][n_gram[1]])
             types = sum([item[1] for item in trigram[n_gram[0]][n_gram[1]].items()])
             plus_lambda = (types/(no_tokens+types))
@@ -266,40 +278,28 @@ def witten_bell(n, n_gram, high_ord= True):
                 return (plus_lambda)*(trigram[n_gram[0]][n_gram[1]][n_gram[2]]/types) + (minus_lambda)*(witten_bell(2, n_gram[1:]))
             else:
                 return minus_lambda*witten_bell(2, n_gram[1:])
-        else:
-            return 0.5*witten_bell(2, n_gram[1:])
+        # else:
+        except:
+            return 0.9*witten_bell(2, n_gram[1:])
     if n == 4:
-        if n_gram[1] in fourgram[n_gram[0]].keys():
-            if n_gram[2] in fourgram[n_gram[0]][n_gram[1]].keys():
-                no_tokens = len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]])
-                types = sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])
-                plus_lambda = (types/(no_tokens+types))
-                minus_lambda = (no_tokens/(no_tokens+types))
-                if n_gram[3] in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].keys():
-                    return (plus_lambda)*(fourgram[n_gram[0]][n_gram[1]][n_gram[2]][n_gram[3]]/types) + (minus_lambda)*(witten_bell(3, n_gram[1:]))
-                else:
-                    return minus_lambda*witten_bell(3, n_gram[1:])
-            else:
-                return 0.5*witten_bell(3, n_gram[1:])
-        else:
-            return 0.5*witten_bell(3, n_gram[1:])
-    # if n == 4:
-    #     no_tokens = len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]])
-    #     types = sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])
-    #     plus_lambda = (types/(no_tokens+types))
-    #     minus_lambda = (no_tokens/(no_tokens+types))
-    #     if n_gram[1] in fourgram[n_gram[0]].keys():
-    #         if n_gram[2] in fourgram[n_gram[0]][n_gram[1]].keys():
-    #             if n_gram[3] in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].keys():
-    #                 return (plus_lambda)*(fourgram[n_gram[0]][n_gram[1]][n_gram[2]][n_gram[3]]/types) + (minus_lambda)*(witten_bell(3, n_gram[1:]))
-    #             else:
-    #                 return minus_lambda*witten_bell(3, n_gram[1:])
-    #         else:
-    #             return minus_lambda*witten_bell(3, n_gram[1:])
-    #     else:
-    #         return minus_lambda*witten_bell(3, n_gram[1:])
-
-
+        # if n_gram[1] in fourgram[n_gram[0]].keys():
+        try:
+            try:
+                # if n_gram[2] in fourgram[n_gram[0]][n_gram[1]].keys():
+                    no_tokens = len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]])
+                    types = sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])
+                    plus_lambda = (types/(no_tokens+types))
+                    minus_lambda = (no_tokens/(no_tokens+types))
+                    if n_gram[3] in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].keys():
+                        return (plus_lambda)*(fourgram[n_gram[0]][n_gram[1]][n_gram[2]][n_gram[3]]/types) + (minus_lambda)*(witten_bell(3, n_gram[1:]))
+                    else:
+                        return minus_lambda*witten_bell(3, n_gram[1:])
+            except KeyError:
+                return 0.9*witten_bell(3, n_gram[1:])
+        # else:
+        except KeyError:
+            return 0.9*witten_bell(3, n_gram[1:])
+    
 
 #calculating perplexity using an array of probabilities
 def perplexity(prob_array):
@@ -335,38 +335,116 @@ else:
     print("Please provide a valid model type")
     exit()
 
-# reading file and storing the data
-with open(path) as file:
-    fdata = file.readlines()
-
-# #shuffling data in a list
+# # reading file and storing the data
 # with open(path) as file:
 #     fdata = file.readlines()
-# random.shuffle(fdata)
-# # Choosing training and testing data accordingly
-# training_data = fdata[:len(fdata)-1000+1]
-# testing_data = fdata[len(fdata)-1000+1:]
-# ngram_dict(training_data)
+
+#shuffling data in a list
+with open(path) as file:
+    fdata = file.readlines()
+random.shuffle(fdata)
+# Choosing training and testing data accordingly
+training_data = fdata[:len(fdata)-1000]
+testing_data = fdata[len(fdata)-1000:]
+ngram_dict(training_data)
+final_per = []
+final_sent = []
+count = 0
+print("Training dict is ready")
+for sentence in training_data:
+    print(sentence)
+    print(count)
+    count += 1
+    real_sent =  re.sub(r'\n', '', sentence)
+    sentence = preprocess(sentence)
+    if len(sentence) < 4:
+        for i in range(4-len(sentence)):
+            sentence.append("<UNK>")
+    sen_temp = []
+    for i in sentence:
+        if i in unigram.keys():
+            sen_temp.append(i)
+        else:
+            sen_temp.append("<UNK>")
+    sentence = sen_temp
+    perplex = []
+    for i in range(len(sentence)-n+1):
+        prob = smooth_model(n,sentence[i:i+n])
+        perplex.append(prob)
+    # print("Final perplexity:", perplexity(perplex))
+    final_sent.append(real_sent)
+    final_per.append(perplexity(perplex))
+#python code to find average of a list
+def mean(numbers):
+    return float(sum(numbers)) / max(len(numbers), 1)
+
+file1 = open("2020114017_LM4_train-perplexity.txt","w")#write mode
+file1.write(str(mean(final_per)) + "\n")
+for i in range(len(final_sent)):
+    file1.write(final_sent[i]+'\t'+str(final_per[i])+'\n')
+file1.close()
 
 
-# generating the uni,bi,tri,four gram dictionaries
-ngram_dict(fdata)
-print("Trained")
 
-sentence = input("input sentence: ")
-sentence = preprocess(sentence)
-sen_temp = []
-for i in sentence:
-    if i in unigram.keys():
-        sen_temp.append(i)
-    else:
-        sen_temp.append("<UNK>")
-sentence = sen_temp
 
-#Calculating perplexity of the Input sentence.
-perplex = []
-for i in range(len(sentence)-n+1):
-    prob = smooth_model(n,sentence[i:i+n])
-    print("for",sentence[i:i+n],':',prob)
-    perplex.append(prob)
-print("Final perplexity:", perplexity(perplex))
+# # testing the model
+final_per = []
+final_sent = []
+count = 0
+for sentence in testing_data:
+    print(sentence)
+    print(count)
+    count += 1
+    real_sent =  re.sub(r'\n', '', sentence)
+    sentence = preprocess(sentence)
+    if len(sentence) < 4:
+        for i in range(4-len(sentence)):
+            sentence.append("<UNK>")
+    sen_temp = []
+    for i in sentence:
+        if i in unigram.keys():
+            sen_temp.append(i)
+        else:
+            sen_temp.append("<UNK>")
+    sentence = sen_temp
+    perplex = []
+    for i in range(len(sentence)-n+1):
+        prob = smooth_model(n,sentence[i:i+n])
+        perplex.append(prob)
+    # print("Final perplexity:", perplexity(perplex))
+    final_sent.append(real_sent)
+    final_per.append(perplexity(perplex))
+#python code to find average of a list
+def mean(numbers):
+    return float(sum(numbers)) / max(len(numbers), 1)
+
+file1 = open("2020114017_LM4_test-perplexity.txt","w")#write mode
+file1.write(str(mean(final_per)) + "\n")
+for i in range(len(final_sent)):
+    file1.write(final_sent[i]+'\t'+str(final_per[i])+'\n')
+file1.close()
+print("Over")
+    
+
+
+# # generating the uni,bi,tri,four gram dictionaries
+# ngram_dict(fdata)
+# print("Trained")
+
+# sentence = input("input sentence: ")
+# sentence = preprocess(sentence)
+# sen_temp = []
+# for i in sentence:
+#     if i in unigram.keys():
+#         sen_temp.append(i)
+#     else:
+#         sen_temp.append("<UNK>")
+# sentence = sen_temp
+
+# #Calculating perplexity of the Input sentence.
+# perplex = []
+# for i in range(len(sentence)-n+1):
+#     prob = smooth_model(n,sentence[i:i+n])
+#     print("for",sentence[i:i+n],':',prob)
+#     perplex.append(prob)
+# print("Final perplexity:", perplexity(perplex))
