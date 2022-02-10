@@ -71,7 +71,6 @@ def random_choice(list):
     return random.choice(list)
 
 def convert_some_to_unk(tokenized_sentences):
-    #ratio = 0.005
     vocab = {}
     for sent in tokenized_sentences:
         for token in sent:
@@ -260,14 +259,6 @@ def kneyser_ney(n, n_gram, high_ord=True):
         among = sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])
         return (max(0,count-d_4)/among)+(lambd*kneyser_ney(3,n_gram[1:],False))
 
-    # if n == 3:
-    #     d_3 = 0.75
-    #     lambda_3 = (d_3 * len(trigram[n_gram[0]][n_gram[1]]))/(sum([item[1] for item in trigram[n_gram[0]][n_gram[1]].items()]))
-    #     if high_ord:
-
-    # if n == 4:
-    #     d_4 = 0.75
-    #     lambda_4 = (d_4 * len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]]))/(sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()]))
 
 #Implementing Witten Bell algorithm
 def witten_bell(n, n_gram, high_ord= True):
@@ -365,42 +356,42 @@ random.shuffle(fdata)
 training_data = fdata[:len(fdata)-1000]
 testing_data = fdata[len(fdata)-1000:]
 ngram_dict(training_data)
-# final_per = []
-# final_sent = []
-# count = 0
-# print("Training dict is ready")
-# for sentence in training_data:
-#     print(sentence)
-#     print(count)
-#     count += 1
-#     real_sent =  re.sub(r'\n', '', sentence)
-#     sentence = preprocess(sentence)
-#     if len(sentence) < 4:
-#         for i in range(4-len(sentence)):
-#             sentence.append("<UNK>")
-#     sen_temp = []
-#     for i in sentence:
-#         if i in unigram.keys():
-#             sen_temp.append(i)
-#         else:
-#             sen_temp.append("<UNK>")
-#     sentence = sen_temp
-#     perplex = []
-#     for i in range(len(sentence)-n+1):
-#         prob = smooth_model(n,sentence[i:i+n])
-#         perplex.append(prob)
-#     # print("Final perplexity:", perplexity(perplex))
-#     final_sent.append(real_sent)
-#     final_per.append(perplexity(perplex))
-# #python code to find average of a list
-# def mean(numbers):
-#     return float(sum(numbers)) / max(len(numbers), 1)
+final_per = []
+final_sent = []
+count = 0
+print("Training dict is ready")
+for sentence in training_data:
+    print(sentence)
+    print(count)
+    count += 1
+    real_sent =  re.sub(r'\n', '', sentence)
+    sentence = preprocess(sentence)
+    if len(sentence) < 4:
+        for i in range(4-len(sentence)):
+            sentence.append("<UNK>")
+    sen_temp = []
+    for i in sentence:
+        if i in unigram.keys():
+            sen_temp.append(i)
+        else:
+            sen_temp.append("<UNK>")
+    sentence = sen_temp
+    perplex = []
+    for i in range(len(sentence)-n+1):
+        prob = smooth_model(n,sentence[i:i+n])
+        perplex.append(prob)
+    # print("Final perplexity:", perplexity(perplex))
+    final_sent.append(real_sent)
+    final_per.append(perplexity(perplex))
+#python code to find average of a list
+def mean(numbers):
+    return float(sum(numbers)) / max(len(numbers), 1)
 
-# file1 = open("2020114017_LM1_train-perplexity.txt","w")#write mode
-# file1.write(str(mean(final_per)) + "\n")
-# for i in range(len(final_sent)):
-#     file1.write(final_sent[i]+'\t'+str(final_per[i])+'\n')
-# file1.close()
+file1 = open("2020114017_LM1_train-perplexity.txt","w")#write mode
+file1.write(str(mean(final_per)) + "\n")
+for i in range(len(final_sent)):
+    file1.write(final_sent[i]+'\t'+str(final_per[i])+'\n')
+file1.close()
 
 
 
@@ -446,23 +437,25 @@ print("Over")
 
 
 # # generating the uni,bi,tri,four gram dictionaries
-# ngram_dict(fdata)
-# print("Trained")
+with open(path) as file:
+    fdata = file.readlines()
+ngram_dict(fdata)
+print("Trained")
 
-# sentence = input("input sentence: ")
-# sentence = preprocess(sentence)
-# sen_temp = []
-# for i in sentence:
-#     if i in unigram.keys():
-#         sen_temp.append(i)
-#     else:
-#         sen_temp.append("<UNK>")
-# sentence = sen_temp
+sentence = input("input sentence: ")
+sentence = preprocess(sentence)
+sen_temp = []
+for i in sentence:
+    if i in unigram.keys():
+        sen_temp.append(i)
+    else:
+        sen_temp.append("<UNK>")
+sentence = sen_temp
 
-# #Calculating perplexity of the Input sentence.
-# perplex = []
-# for i in range(len(sentence)-n+1):
-#     prob = smooth_model(n,sentence[i:i+n])
-#     print("for",sentence[i:i+n],':',prob)
-#     perplex.append(prob)
-# print("Final perplexity:", perplexity(perplex))
+#Calculating perplexity of the Input sentence.
+perplex = []
+for i in range(len(sentence)-n+1):
+    prob = smooth_model(n,sentence[i:i+n])
+    print("for",sentence[i:i+n],':',prob)
+    perplex.append(prob)
+print("Final perplexity:", perplexity(perplex))
