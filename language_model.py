@@ -194,52 +194,6 @@ def kneyser_ney(n, n_gram, high_ord=True):
                     if n_gram[1] in trigram[first][n_gram[0]].keys():
                         num_2 += 1
             return (max(num_2-d_2, 0)/len(trigram.keys()))+(lambda_2*kneyser_ney(1, n_gram[1:], False))
-    # if n == 3:
-    #     d_3 = 0.9
-    #     lambda_3 = (d_3 * len(trigram[n_gram[0]][n_gram[1]]))/(sum([item[1] for item in trigram[n_gram[0]][n_gram[1]].items()]))
-    #     if high_ord:
-    #         if n_gram[1] in trigram[n_gram[0]].keys():
-    #             if n_gram[2] in trigram[n_gram[0]][n_gram[1]].keys():
-    #                 num_3 = trigram[n_gram[0]][n_gram[1]][n_gram[2]]
-    #             else:
-    #                 num_3 = 0
-    #         else:
-    #             num_3 = 0
-    #         # total frequency count
-    #         return ((max(num_3-d_3, 0))/sum([item[1] for item in trigram[n_gram[0]][n_gram[1]].items()])) + (lambda_3*kneyser_ney(2, n_gram[1:], False))
-    #     else:
-    #         num_3 = 0
-    #         for first in fourgram.keys():
-    #             if n_gram[0] in fourgram[first].keys():
-    #                 if n_gram[1] in fourgram[first][n_gram[0]].keys():
-    #                     if n_gram[2] in fourgram[first][n_gram[0]][n_gram[1]].keys():
-    #                         num_3 += 1
-    #         return (max(num_3-d_3, 0)/len(fourgram.keys()))+(lambda_3*kneyser_ney(2, n_gram[1:], False))
-    # if n == 4:
-    #     d_4 = 9
-    #     lambda_4 = (d_4 * len(fourgram[n_gram[0]][n_gram[1]][n_gram[2]]))/(sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()]))
-    #     if high_ord:
-    #         if n_gram[1] in fourgram[n_gram[0]].keys():
-    #             if n_gram[2] in fourgram[n_gram[0]][n_gram[1]].keys():
-    #                 if n_gram[3] in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].keys():
-    #                     num_4 = fourgram[n_gram[0]][n_gram[1]][n_gram[2]][n_gram[3]]
-    #                 else:
-    #                     num_4 = 0
-    #             else:
-    #                 num_4 = 0
-    #         else:
-    #             num_4 = 0
-    #         # total frequency count
-    #         return ((max(num_4-d_4, 0))/sum([item[1] for item in fourgram[n_gram[0]][n_gram[1]][n_gram[2]].items()])) + (lambda_4*kneyser_ney(3, n_gram[1:], False))
-    #     else:
-    #         num_4 = 0
-    #         for first in fourgram.keys():
-    #             if n_gram[0] in fourgram[first].keys():
-    #                 if n_gram[1] in fourgram[first][n_gram[0]].keys():
-    #                     if n_gram[2] in fourgram[first][n_gram[0]][n_gram[1]].keys():
-    #                         if n_gram[3] in fourgram[first][n_gram[0]][n_gram[1]][n_gram[2]].keys():
-    #                             num_4 += 1
-    #         return (max(num_4-d_4, 0)/len(fourgram.keys()))+(lambda_4*kneyser_ney(3, n_gram[1:], False))
     if n==3:
         d_3 = 0.9
         try:
@@ -348,93 +302,99 @@ else:
 # with open(path) as file:
 #     fdata = file.readlines()
 
+#####################################################################333333333333333##########
+#                        TRAIN - TEST CODE
+#####################################################################333333333333333##########
 #shuffling data in a list
-with open(path) as file:
-    fdata = file.readlines()
-random.shuffle(fdata)
-# Choosing training and testing data accordingly
-training_data = fdata[:len(fdata)-1000]
-testing_data = fdata[len(fdata)-1000:]
-ngram_dict(training_data)
-final_per = []
-final_sent = []
-count = 0
-print("Training dict is ready")
-for sentence in training_data:
-    print(sentence)
-    print(count)
-    count += 1
-    real_sent =  re.sub(r'\n', '', sentence)
-    sentence = preprocess(sentence)
-    if len(sentence) < 4:
-        for i in range(4-len(sentence)):
-            sentence.append("<UNK>")
-    sen_temp = []
-    for i in sentence:
-        if i in unigram.keys():
-            sen_temp.append(i)
-        else:
-            sen_temp.append("<UNK>")
-    sentence = sen_temp
-    perplex = []
-    for i in range(len(sentence)-n+1):
-        prob = smooth_model(n,sentence[i:i+n])
-        perplex.append(prob)
-    # print("Final perplexity:", perplexity(perplex))
-    final_sent.append(real_sent)
-    final_per.append(perplexity(perplex))
-#python code to find average of a list
-def mean(numbers):
-    return float(sum(numbers)) / max(len(numbers), 1)
+# with open(path) as file:
+#     fdata = file.readlines()
+# random.shuffle(fdata)
+# # Choosing training and testing data accordingly
+# training_data = fdata[:len(fdata)-1000]
+# testing_data = fdata[len(fdata)-1000:]
+# ngram_dict(training_data)
+# final_per = []
+# final_sent = []
+# count = 0
+# print("Training dict is ready")
+# for sentence in training_data:
+#     print(sentence)
+#     print(count)
+#     count += 1
+#     real_sent =  re.sub(r'\n', '', sentence)
+#     sentence = preprocess(sentence)
+#     if len(sentence) < 4:
+#         for i in range(4-len(sentence)):
+#             sentence.append("<UNK>")
+#     sen_temp = []
+#     for i in sentence:
+#         if i in unigram.keys():
+#             sen_temp.append(i)
+#         else:
+#             sen_temp.append("<UNK>")
+#     sentence = sen_temp
+#     perplex = []
+#     for i in range(len(sentence)-n+1):
+#         prob = smooth_model(n,sentence[i:i+n])
+#         perplex.append(prob)
+#     # print("Final perplexity:", perplexity(perplex))
+#     final_sent.append(real_sent)
+#     final_per.append(perplexity(perplex))
+# #python code to find average of a list
+# def mean(numbers):
+#     return float(sum(numbers)) / max(len(numbers), 1)
 
-file1 = open("2020114017_LM1_train-perplexity.txt","w")#write mode
-file1.write(str(mean(final_per)) + "\n")
-for i in range(len(final_sent)):
-    file1.write(final_sent[i]+'\t'+str(final_per[i])+'\n')
-file1.close()
-
-
+# file1 = open("2020114017_LM1_train-perplexity.txt","w")#write mode
+# file1.write(str(mean(final_per)) + "\n")
+# for i in range(len(final_sent)):
+#     file1.write(final_sent[i]+'\t'+str(final_per[i])+'\n')
+# file1.close()
 
 
-# testing the model
-final_per = []
-final_sent = []
-count = 0
-for sentence in testing_data:
-    print(sentence)
-    print(count)
-    count += 1
-    real_sent =  re.sub(r'\n', '', sentence)
-    sentence = preprocess(sentence)
-    if len(sentence) < 4:
-        for i in range(4-len(sentence)):
-            sentence.append("<UNK>")
-    sen_temp = []
-    for i in sentence:
-        if i in unigram.keys():
-            sen_temp.append(i)
-        else:
-            sen_temp.append("<UNK>")
-    sentence = sen_temp
-    perplex = []
-    for i in range(len(sentence)-n+1):
-        prob = smooth_model(n,sentence[i:i+n])
-        perplex.append(prob)
-    # print("Final perplexity:", perplexity(perplex))
-    final_sent.append(real_sent)
-    final_per.append(perplexity(perplex))
-#python code to find average of a list
-def mean(numbers):
-    return float(sum(numbers)) / max(len(numbers), 1)
 
-file1 = open("2020114017_LM3_test-perplexity.txt","w")#write mode
-file1.write(str(mean(final_per)) + "\n")
-for i in range(len(final_sent)):
-    file1.write(final_sent[i]+'\t'+str(final_per[i])+'\n')
-file1.close()
-print("Over")
+
+# # testing the model
+# final_per = []
+# final_sent = []
+# count = 0
+# for sentence in testing_data:
+#     print(sentence)
+#     print(count)
+#     count += 1
+#     real_sent =  re.sub(r'\n', '', sentence)
+#     sentence = preprocess(sentence)
+#     if len(sentence) < 4:
+#         for i in range(4-len(sentence)):
+#             sentence.append("<UNK>")
+#     sen_temp = []
+#     for i in sentence:
+#         if i in unigram.keys():
+#             sen_temp.append(i)
+#         else:
+#             sen_temp.append("<UNK>")
+#     sentence = sen_temp
+#     perplex = []
+#     for i in range(len(sentence)-n+1):
+#         prob = smooth_model(n,sentence[i:i+n])
+#         perplex.append(prob)
+#     # print("Final perplexity:", perplexity(perplex))
+#     final_sent.append(real_sent)
+#     final_per.append(perplexity(perplex))
+# #python code to find average of a list
+# def mean(numbers):
+#     return float(sum(numbers)) / max(len(numbers), 1)
+
+# file1 = open("t1.txt","w")#write mode
+# file1.write(str(mean(final_per)) + "\n")
+# for i in range(len(final_sent)):
+#     file1.write(final_sent[i]+'\t'+str(final_per[i])+'\n')
+# file1.close()
+# print("Over")
     
 
+#####################################################################333333333333333##########
+#                                SINGLE SENTENCE
+#####################################################################333333333333333##########
 
 # # generating the uni,bi,tri,four gram dictionaries
 with open(path) as file:
@@ -454,8 +414,11 @@ sentence = sen_temp
 
 #Calculating perplexity of the Input sentence.
 perplex = []
+prob_final = 1
 for i in range(len(sentence)-n+1):
     prob = smooth_model(n,sentence[i:i+n])
-    print("for",sentence[i:i+n],':',prob)
+    print("For",sentence[i:i+n],'probability is:',prob)
     perplex.append(prob)
-print("Final perplexity:", perplexity(perplex))
+    prob_final *= prob
+print("Final Probability:", prob_final)
+print("Final Perplexity:", perplexity(perplex))
